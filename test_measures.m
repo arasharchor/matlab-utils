@@ -1,0 +1,73 @@
+% Script to analyze the lesion segmentation masks
+% 
+
+clear all;
+
+%% options (a lot of things to set up)
+
+% image path and names
+input_folder = '~/w/SLS/images/optimized_VH';
+fixed = 'rlesionMask';
+moving = '_SLS';
+
+% statistics:
+measure = 'rfpf';
+
+
+%%  scan images
+dir_names = dir(input_folder);
+
+
+for i=3:size(dir_names,1)
+
+    % parse current configuration
+    current_scan = dir_names(i).name;   
+    moving_scan = [current_scan, moving];
+    lesion = fullfile(input_folder, current_scan, fixed);
+    smask = fullfile(input_folder,current_scan,'SLS_tests', moving_scan);
+    l_scan = load_compressed_nii(lesion);
+    s_scan = load_compressed_nii(smask);
+    
+    l = l_scan.img;
+    s = s_scan.img;
+    
+    
+    % run script and catch the resulted value
+    try
+        s = measures(l,s,measure);
+    catch
+        % so far, not implemented
+        warning('You have to implement the error handler');
+    end
+    
+    disp(['SCAN ', current_scan, ' (', measure, ') :-> ', num2str(s)]);
+
+    %{
+    % FP rate
+
+    false_lesions = 0;
+    not_volume_lesion = 0;
+    
+    CC = bwconncomp(mask_img);
+    lesion_labels = labelmatrix(CC);
+    new_labels = unique(lesion_labels);
+    num_lesions = numel(new_labels) -1;
+   
+    for l=new_labels'
+        if l>0
+            l_label = find(lesion_labels == l);
+            ol = sum(lesion_img(l_label) & mask_img(l_label));
+            if ol == 0
+                false_lesions = false_lesions + 1;
+                not_volume_lesion = not_volume_lesion + numel(l_label);
+            end
+        end        
+    end
+    fl = false_lesions / num_lesions;
+    vl = not_volume_lesion / numel(nonzeros(lesion_img));
+    fl_d(i-2) = fl;
+    vl_d(i-2) = vl;
+    disp(['SCAN ', current_scan, ' num lesions: ', num2str(num_lesions), ' -- % not detected: ', num2str(fl),'(',num2str(vl),'%)']);
+%}
+
+end
