@@ -6,5 +6,6 @@ A set of functions used in MRI data for manipulate and/or evaluate the results.
 
 * load/save compressed nifti
 * measures.m
+* sigmoid_function.m
 * rotate_X_labels (not mine)
 
